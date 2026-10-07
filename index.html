@@ -460,6 +460,8 @@
 <a class="hover:text-ember transition-colors" href="javascript:void(0)" id="nav-reports" onclick="openOverlay('reportsOverlay')">가족 이야기</a>
 <a class="hover:text-ember transition-colors" href="javascript:void(0)" id="nav-letters" onclick="openOverlay('lettersOverlay')">기도 편지</a>
 <a class="hover:text-ember transition-colors" href="javascript:void(0)" id="nav-support" onclick="openOverlay('supportOverlay')">후원 안내</a>
+<!-- ⭐ 신규: 비밀 일기 메뉴 — 비밀번호로 들어온 브라우저에서만 보입니다 -->
+<a class="hidden hover:text-ember transition-colors" data-i18n-skip href="javascript:void(0)" id="nav-diary" onclick="openDiary()">📔 일기</a>
 </nav>
 <div class="flex items-center gap-3">
 <div class="site-search-trigger hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full border border-ink-900/10 bg-white/70 text-ink-700">
@@ -502,6 +504,7 @@
 <a class="py-2.5 border-b border-ink-900/5" href="javascript:void(0)" id="navm-reports" onclick="openOverlay('reportsOverlay')">가족 이야기</a>
 <a class="py-2.5 border-b border-ink-900/5" href="javascript:void(0)" id="navm-letters" onclick="openOverlay('lettersOverlay')">기도 편지</a>
 <a class="py-2.5" href="javascript:void(0)" id="navm-support" onclick="openOverlay('supportOverlay')">후원 안내</a>
+<a class="hidden py-2.5 border-t border-ink-900/5" data-i18n-skip href="javascript:void(0)" id="navm-diary" onclick="openDiary()">📔 일기</a>
 <a class="mt-3 text-center bg-ember text-white font-semibold px-5 py-2.5 rounded-full" href="javascript:void(0)" id="navm-donate-btn" onclick="openOverlay('supportOverlay')">후원하기</a>
 </nav>
 </div>
@@ -860,6 +863,50 @@
   </button>
 </div>
 <!-- ================= FOOTER ================= -->
+<!-- ============================================================
+     ⭐ 신규: 비밀 일기장 (본인 전용)
+     - 비밀번호로 들어온 브라우저에서만 메뉴가 보이고, 내용은 로그인 열쇠가
+       있어야만 서버(Cloudflare)에서 내려옵니다. 이 화면 코드에는 일기 내용이 없습니다.
+     - data-i18n-skip: 일기 글이 구글 번역으로 넘어가지 않도록 번역 대상에서 뺍니다.
+     ============================================================ -->
+<div class="hidden fixed inset-x-0 bottom-0 top-16 sm:top-20 z-[70] bg-warm-bg overflow-y-auto" data-i18n-skip id="diaryOverlay">
+<div class="max-w-3xl mx-auto px-5 py-6 pb-24">
+
+  <!-- 목록 화면 -->
+  <div id="diaryListView">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <h2 class="font-bold text-xl sm:text-2xl text-ink-900">📔 나의 일기</h2>
+      <button class="text-sm font-semibold text-ink-700 hover:text-ember px-3 py-1.5 rounded-full border border-ink-900/10" id="diaryCloseBtn" type="button">닫기</button>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-3">
+      <button class="bg-ember hover:bg-ember-dark text-white text-sm font-semibold px-4 py-2 rounded-full" id="diaryNewBtn" type="button">＋ 새 일기</button>
+      <button class="text-sm font-semibold text-ink-700 hover:text-ember px-4 py-2 rounded-full border border-ink-900/10" id="diaryExportBtn" type="button">내보내기</button>
+      <button class="text-sm font-semibold text-ink-700 hover:text-ember px-4 py-2 rounded-full border border-ink-900/10" id="diaryLogoutBtn" type="button">🔒 잠그기</button>
+    </div>
+    <input autocomplete="off" class="w-full bg-white text-ink-900 border border-ink-900/15 rounded-xl px-4 py-2.5 text-[16px]" id="diarySearch" placeholder="🔍 제목·내용·날짜 검색" type="search"/>
+    <p class="text-xs text-ink-500 mt-2 mb-3" id="diaryCount"></p>
+    <div class="hidden text-sm mb-3 rounded-xl px-4 py-3 border border-ink-900/10 bg-white text-ink-700" id="diaryStatus"></div>
+    <div id="diaryList"></div>
+  </div>
+
+  <!-- 쓰기 화면 -->
+  <div class="hidden" id="diaryEditView">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <button class="text-sm font-semibold text-ink-700 hover:text-ember px-3 py-1.5 rounded-full border border-ink-900/10" id="diaryBackBtn" type="button">← 목록</button>
+      <input class="bg-white text-ink-900 border border-ink-900/15 rounded-xl px-3 py-2 text-[16px]" id="diaryDate" type="date"/>
+    </div>
+    <p class="hidden text-xs rounded-lg px-3 py-2 mb-3 border border-ink-900/10 bg-white text-ink-700" id="diaryDraftNote">저장하지 못했던 임시 글을 불러왔어요.</p>
+    <input autocomplete="off" class="w-full bg-white text-ink-900 border border-ink-900/15 rounded-xl px-4 py-3 text-[16px] font-bold mb-3" id="diaryTitle" maxlength="100" placeholder="제목(주제)" type="text"/>
+    <textarea class="w-full bg-white text-ink-900 border border-ink-900/15 rounded-xl px-4 py-3 text-[16px] leading-relaxed min-h-[55vh]" id="diaryBody" placeholder="오늘의 일기를 적어보세요"></textarea>
+    <div class="text-xs mt-2 min-h-[1.25rem] text-ink-500" id="diaryEditStatus"></div>
+    <div class="flex items-center gap-2 mt-3">
+      <button class="bg-ember hover:bg-ember-dark text-white text-sm font-semibold px-6 py-2.5 rounded-full disabled:opacity-50" id="diarySaveBtn" type="button">저장</button>
+      <button class="hidden text-sm font-semibold text-ink-700 hover:text-ember px-4 py-2.5 rounded-full border border-ink-900/10" id="diaryDeleteBtn" type="button">삭제</button>
+    </div>
+  </div>
+
+</div>
+</div>
 <footer class="bg-ink-900 text-white/70" id="siteFooter">
 <div class="max-w-7xl mx-auto px-6 sm:px-8 py-5">
 <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-7">
@@ -2382,7 +2429,7 @@
   // 기도편지 구독 — 스티비 구독 페이지로 직접 연결 (버튼 링크만 있으면 됨, 별도 JS 불필요)
 
   // 선교리포트 / 기도 편지 전체보기 오버레이
-  const ALL_OVERLAYS = ['reportsOverlay', 'lettersOverlay', 'supportOverlay', 'aboutOverlay', 'galleryOverlay', 'cambodiaOverlay', 'recentOverlay'];
+  const ALL_OVERLAYS = ['reportsOverlay', 'lettersOverlay', 'supportOverlay', 'aboutOverlay', 'galleryOverlay', 'cambodiaOverlay', 'recentOverlay', 'diaryOverlay'];
 
   // ⭐ 신규: 각 "전체보기"가 가지는 고유 주소.
   // Worker가 이 주소들을 모두 처리하므로 새로고침·공유해도 그대로 열립니다.
@@ -4472,6 +4519,10 @@
           body: JSON.stringify({ password }),
         });
         const data = await res.json();
+        // ⭐ 신규: 비밀번호가 맞으면 서버가 일기장용 열쇠도 같이 줍니다.
+        if (data && data.ok === true && data.token && window.diaryUnlock) {
+          window.diaryUnlock(data.token);
+        }
         return data && data.ok === true;
       } catch (e) {
         return false;
@@ -4512,13 +4563,399 @@
           if (ok) {
             localStorage.setItem('printAccess', '1');
             showPrintButtons();
-            alert('인쇄 버튼이 켜졌어요. 이 브라우저에서는 계속 보여요.');
+            alert('인쇄 버튼과 일기 메뉴가 켜졌어요. 이 브라우저에서는 계속 보여요.');
           } else {
             alert('비밀번호가 일치하지 않아요.');
           }
         });
       }
     }
+  })();
+
+
+  // ============================================================
+  // ⭐ 신규: 비밀 일기장
+  //
+  // - 일기는 이 파일이 아니라 Cloudflare KV(서버)에 저장됩니다.
+  // - 로그인 열쇠(토큰)는 ?admin=1 에서 비밀번호를 맞게 입력하면 받아
+  //   이 브라우저(localStorage)에 30일간 보관합니다.
+  // - 글 한 편 = 날짜 + 제목 + 본문. 같은 날 여러 편도 가능합니다.
+  // - 쓰는 도중 탭이 새로고침돼도 잃지 않도록, 입력할 때마다 이 기기에
+  //   임시 저장(draft)해두고 저장에 성공하면 지웁니다.
+  // ============================================================
+  (function initDiary() {
+    const API = 'https://flat-shape-f26f.littleflame83.workers.dev';
+    const TOKEN_KEY = 'diaryToken';
+    const DRAFT_KEY = 'diaryDraft';
+    const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
+
+    const $ = (id) => document.getElementById(id);
+    const overlay = $('diaryOverlay');
+    if (!overlay) return;
+
+    const listView = $('diaryListView'), editView = $('diaryEditView');
+    const listEl = $('diaryList'), statusEl = $('diaryStatus'), searchEl = $('diarySearch'), countEl = $('diaryCount');
+    const dateEl = $('diaryDate'), titleEl = $('diaryTitle'), bodyEl = $('diaryBody');
+    const editStatusEl = $('diaryEditStatus'), draftNoteEl = $('diaryDraftNote');
+    const saveBtn = $('diarySaveBtn'), deleteBtn = $('diaryDeleteBtn');
+
+    let entries = [];
+    let lastSync = 0;
+    let editing = null;      // { id, prevDate, isNew, original: {date,title,body}, base }
+    let searchTimer = null;
+
+    // ---------- 로그인 열쇠 ----------
+    function getToken() {
+      try {
+        const t = localStorage.getItem(TOKEN_KEY);
+        if (!t) return null;
+        const exp = Number(t.split('.')[0]);
+        if (!exp || exp < Date.now()) { localStorage.removeItem(TOKEN_KEY); return null; }
+        return t;
+      } catch (e) { return null; }
+    }
+    function setMenuVisible(on) {
+      ['nav-diary', 'navm-diary'].forEach((id) => {
+        const el = $(id);
+        if (el) el.classList.toggle('hidden', !on);
+      });
+    }
+    window.diaryUnlock = function (token) {
+      try { localStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+      setMenuVisible(true);
+    };
+    if (getToken()) setMenuVisible(true);
+
+    // ---------- 서버 통신 ----------
+    async function api(path, opts) {
+      opts = opts || {};
+      const token = getToken();
+      if (!token) { expired(); throw Object.assign(new Error('auth'), { code: 'auth' }); }
+      const res = await fetch(API + path, {
+        method: opts.method || 'GET',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+      let data = null;
+      try { data = await res.json(); } catch (e) {}
+      if (res.status === 401) { expired(); throw Object.assign(new Error('auth'), { code: 'auth' }); }
+      if (!res.ok) throw new Error((data && data.error) || ('서버 오류 (' + res.status + ')'));
+      return data;
+    }
+    // 열쇠가 만료/무효: 메뉴를 숨기고 닫음 (쓰던 임시 글은 지우지 않음)
+    function expired() {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+      setMenuVisible(false);
+      hideOverlay();
+      alert('일기장 로그인이 풀렸어요. 주소 끝에 ?admin=1 을 붙여 다시 들어와 주세요. (쓰던 글은 이 기기에 임시 저장돼 있어요)');
+    }
+
+    // ---------- 날짜 도우미 ----------
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function weekday(ds) {
+      const [y, m, d] = ds.split('-').map(Number);
+      return WEEK[new Date(y, m - 1, d).getDay()];
+    }
+    function fmtDate(ds) { return ds.replace(/-/g, '.') + ' (' + weekday(ds) + ')'; }
+    function cmp(a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return (b.created || 0) - (a.created || 0);
+    }
+
+    // ---------- 화면 열기/닫기 ----------
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      const anyOpen = ALL_OVERLAYS.some((oid) => {
+        const el = document.getElementById(oid);
+        return el && !el.classList.contains('hidden');
+      });
+      if (!anyOpen) document.body.style.overflow = '';
+    }
+    function showList() {
+      editView.classList.add('hidden');
+      listView.classList.remove('hidden');
+      overlay.scrollTop = 0;
+      renderList();
+    }
+    function openDiary() {
+      if (!getToken()) { setMenuVisible(false); return; }
+      closeAllDetailModalsInstantly();
+      ALL_OVERLAYS.forEach((oid) => {
+        if (oid === 'diaryOverlay') return;
+        const o = document.getElementById(oid);
+        if (o) o.classList.add('hidden');
+      });
+      overlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      overlay.scrollTop = 0;
+      mobileMenu.classList.add('hidden');
+      iconOpen.classList.remove('hidden');
+      iconClose.classList.add('hidden');
+      // 뒤로가기 버튼으로 일기장만 닫히도록 기록에 한 단계 추가
+      if (!(history.state && history.state.diary)) {
+        history.pushState({ overlay: null, detail: null, diary: 1 }, '', '/');
+      }
+      if (editView.classList.contains('hidden')) showList();
+      load(false);
+    }
+    window.openDiary = openDiary;
+
+    function closeDiary() {
+      if (history.state && history.state.diary) history.back();
+      else hideOverlay();
+    }
+    // 뒤로/앞으로 가기로 일기 기록 단계를 벗어나면 일기장을 닫음
+    window.addEventListener('popstate', (e) => {
+      if (!(e.state && e.state.diary)) hideOverlay();
+    });
+
+    // ---------- 불러오기 ----------
+    function setStatus(msg, withRetry) {
+      if (!msg) { statusEl.classList.add('hidden'); statusEl.textContent = ''; return; }
+      statusEl.classList.remove('hidden');
+      statusEl.textContent = msg;
+      if (withRetry) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ml-2 underline font-semibold text-ember';
+        b.textContent = '다시 시도';
+        b.addEventListener('click', () => load(true));
+        statusEl.appendChild(b);
+      }
+    }
+    async function load(force) {
+      // 방금 저장/불러온 직후(60초 이내)에는 서버 사본이 아직 덜 퍼졌을 수 있어 다시 안 불러옴
+      if (!force && lastSync && Date.now() - lastSync < 60000) { renderList(); return; }
+      setStatus('불러오는 중…');
+      try {
+        const data = await api('/diary/all');
+        entries = (data && data.entries) || [];
+        lastSync = Date.now();
+        setStatus('');
+        renderList();
+      } catch (e) {
+        if (e.code === 'auth') return;
+        setStatus('일기를 불러오지 못했어요. (' + e.message + ')', true);
+      }
+    }
+
+    // ---------- 목록 ----------
+    function renderList() {
+      const q = searchEl.value.trim().toLowerCase();
+      const terms = q ? q.split(/\s+/) : [];
+      const sorted = entries.slice().sort(cmp);
+      const shown = terms.length
+        ? sorted.filter((e) => {
+            const hay = ((e.title || '') + ' ' + (e.body || '') + ' ' + e.date + ' ' + fmtDate(e.date)).toLowerCase();
+            return terms.every((t) => hay.includes(t));
+          })
+        : sorted;
+
+      countEl.textContent = terms.length ? ('검색 결과 ' + shown.length + '편') : ('전체 ' + entries.length + '편');
+      listEl.replaceChildren();
+
+      if (!shown.length) {
+        const p = document.createElement('p');
+        p.className = 'text-sm text-ink-500 py-10 text-center';
+        p.textContent = terms.length ? '검색 결과가 없어요.' : '아직 일기가 없어요. “＋ 새 일기”를 눌러 첫 글을 써보세요.';
+        listEl.appendChild(p);
+        return;
+      }
+
+      let curMonth = '';
+      shown.forEach((e) => {
+        const month = e.date.slice(0, 7);
+        if (month !== curMonth) {
+          curMonth = month;
+          const h = document.createElement('h3');
+          h.className = 'text-sm font-bold text-ink-500 mt-5 mb-2';
+          h.textContent = month.slice(0, 4) + '년 ' + Number(month.slice(5)) + '월';
+          listEl.appendChild(h);
+        }
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'w-full text-left bg-white rounded-2xl border border-ink-900/10 px-4 py-3 mb-2 hover:border-ember transition-colors';
+        const d = document.createElement('div');
+        d.className = 'text-xs text-ink-500 mb-0.5';
+        d.textContent = fmtDate(e.date);
+        const t = document.createElement('div');
+        t.className = 'font-bold text-ink-900 text-[15px]';
+        t.textContent = e.title || '(제목 없음)';
+        const pv = document.createElement('div');
+        pv.className = 'text-sm text-ink-700 mt-1 line-clamp-2';
+        pv.textContent = (e.body || '').replace(/\s+/g, ' ').trim();
+        b.append(d, t, pv);
+        b.addEventListener('click', () => openEditor(e));
+        listEl.appendChild(b);
+      });
+    }
+
+    // ---------- 임시 저장(draft) ----------
+    function readDraft() {
+      try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { return null; }
+    }
+    function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+    function currentValues() {
+      return { date: dateEl.value, title: titleEl.value, body: bodyEl.value };
+    }
+    function isDirty() {
+      if (!editing) return false;
+      const c = currentValues(), o = editing.original;
+      return c.date !== o.date || c.title !== o.title || c.body !== o.body;
+    }
+    function writeDraft() {
+      if (!editing) return;
+      if (!isDirty()) { clearDraft(); return; }
+      const c = currentValues();
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          key: editing.isNew ? 'new' : editing.id, base: editing.base,
+          date: c.date, title: c.title, body: c.body,
+        }));
+      } catch (e) {}
+    }
+
+    // ---------- 쓰기 화면 ----------
+    function newId() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    }
+    function setEditStatus(msg, isError) {
+      editStatusEl.textContent = msg || '';
+      editStatusEl.style.color = isError ? '#dc2626' : '';
+    }
+    function openEditor(entry) {
+      const isNew = !entry;
+      editing = {
+        // 새 글의 id를 미리 정해두면, 저장 응답이 끊겨서 다시 눌러도 중복 저장되지 않음
+        id: isNew ? newId() : entry.id,
+        prevDate: isNew ? null : entry.date,
+        isNew,
+        base: isNew ? 0 : (entry.updated || 0),
+        original: isNew ? { date: todayStr(), title: '', body: '' }
+                        : { date: entry.date, title: entry.title || '', body: entry.body || '' },
+      };
+      let vals = editing.original, restored = false;
+      const d = readDraft();
+      if (d && d.key === (isNew ? 'new' : entry.id) && d.base === editing.base) {
+        vals = { date: d.date, title: d.title, body: d.body };
+        restored = true;
+      }
+      dateEl.value = vals.date || todayStr();
+      titleEl.value = vals.title;
+      bodyEl.value = vals.body;
+      draftNoteEl.classList.toggle('hidden', !restored);
+      deleteBtn.classList.toggle('hidden', isNew);
+      setEditStatus('');
+      saveBtn.disabled = false;
+      listView.classList.add('hidden');
+      editView.classList.remove('hidden');
+      overlay.scrollTop = 0;
+      if (isNew && !restored) titleEl.focus();
+    }
+    function leaveEditor(force) {
+      if (!force && isDirty() && !confirm('저장하지 않은 내용이 있어요. 저장하지 않고 나갈까요?')) return;
+      clearDraft();
+      editing = null;
+      showList();
+    }
+
+    async function save() {
+      if (!editing) return;
+      const c = currentValues();
+      const title = c.title.trim();
+      if (!c.date) { setEditStatus('날짜를 골라주세요.', true); return; }
+      if (!title && !c.body.trim()) { setEditStatus('제목이나 내용을 입력해주세요.', true); return; }
+      saveBtn.disabled = true;
+      setEditStatus('저장 중…');
+      try {
+        const r = await api('/diary/save', {
+          method: 'POST',
+          body: { id: editing.id, prevDate: editing.prevDate, date: c.date, title, body: c.body },
+        });
+        entries = entries.filter((e) => e.id !== r.entry.id);
+        entries.push(r.entry);
+        lastSync = Date.now();
+        clearDraft();
+        editing = null;
+        showList();
+        setStatus('저장했어요 ✓');
+        setTimeout(() => { if (statusEl.textContent === '저장했어요 ✓') setStatus(''); }, 2500);
+      } catch (e) {
+        if (e.code === 'auth') return;
+        setEditStatus('저장하지 못했어요: ' + e.message + ' — 쓴 내용은 그대로 있어요. 다시 눌러주세요.', true);
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    async function remove() {
+      if (!editing || editing.isNew) return;
+      if (!confirm('이 일기를 삭제할까요? 되돌릴 수 없어요.')) return;
+      deleteBtn.disabled = true;
+      setEditStatus('삭제 중…');
+      try {
+        await api('/diary/delete', { method: 'POST', body: { id: editing.id, date: editing.prevDate } });
+        entries = entries.filter((e) => e.id !== editing.id);
+        lastSync = Date.now();
+        clearDraft();
+        editing = null;
+        showList();
+      } catch (e) {
+        if (e.code === 'auth') return;
+        setEditStatus('삭제하지 못했어요: ' + e.message, true);
+      } finally {
+        deleteBtn.disabled = false;
+      }
+    }
+
+    // ---------- 내보내기(.txt) ----------
+    async function exportTxt() {
+      try { await load(true); } catch (e) {}
+      if (!entries.length) { alert('내보낼 일기가 아직 없어요.'); return; }
+      const sorted = entries.slice().sort((a, b) => -cmp(a, b));
+      let out = '';
+      sorted.forEach((e) => {
+        out += '■ ' + fmtDate(e.date) + (e.title ? '  ' + e.title : '') + '\n' + (e.body || '') + '\n\n--------------------\n\n';
+      });
+      const blob = new Blob(['\uFEFF' + out], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '일기_' + todayStr() + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }
+
+    // ---------- 잠그기(로그아웃) ----------
+    function lock() {
+      if (!confirm('일기장을 잠글까요? 이 기기의 로그인과 임시 저장 글이 지워지고, 다시 보려면 비밀번호가 필요해요.')) return;
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+      clearDraft();
+      entries = []; editing = null; lastSync = 0;
+      setMenuVisible(false);
+      listEl.replaceChildren();
+      searchEl.value = '';
+      closeDiary();
+    }
+
+    // ---------- 버튼 연결 ----------
+    $('diaryNewBtn').addEventListener('click', () => openEditor(null));
+    $('diaryExportBtn').addEventListener('click', exportTxt);
+    $('diaryLogoutBtn').addEventListener('click', lock);
+    $('diaryCloseBtn').addEventListener('click', closeDiary);
+    $('diaryBackBtn').addEventListener('click', () => leaveEditor(false));
+    saveBtn.addEventListener('click', save);
+    deleteBtn.addEventListener('click', remove);
+    [dateEl, titleEl, bodyEl].forEach((el) => el.addEventListener('input', writeDraft));
+    searchEl.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(renderList, 150);
+    });
   })();
 
   // 인쇄 / PDF로 저장 버튼 — 클릭하면 브라우저 인쇄창이 뜨고,
